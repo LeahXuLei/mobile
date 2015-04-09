@@ -1,273 +1,125 @@
 <!doctype html>
-
 <html>
-
 <head>
-
 <meta charset="utf-8" />
-
-<title>Pages Test</title> 
-
-
-
+<title>ZIM Template</title> 
 <!-- for CreateJS and ZIMjs http://zimjs.com - free to modify - Dan Zen 2015 -->
-
 <!-- see http://zimjs.com/templates for more templates and meta tags -->
-
-
-
 <script>var zon = true; // true for comments from zim code</script>
-
 <script src="http://d309knd7es5f10.cloudfront.net/zim_1.4.js"></script><!-- take off _min to see code -->
-
 <script src="http://code.createjs.com/createjs-2014.12.12.min.js"></script> 
-
 <!-- or can go to zimjs.com and createjs.com for individual modules -->
-
-
-
 <script src="view.js"></script>
-
 <script src="controller.js"></script>
-
-
-
 <style>
-
 	body {margin:0px; padding:0px; background-color:#000;}
-
-	#myCanvas {position:absolute; background-color:#D1A170;}
-
+	#myCanvas {position:absolute;}
 </style>
-
-
-
 <script>
-
-
-
 // SCALING OPTIONS
-
 // "none"		sets canvas and stage to dimensions and does not scale if window changes
-
 // "fit"		sets canvas and stage to dimensions and scales to fit inside window size
-
 // "outside"	sets canvas and stage to dimensions and scales to fit outside window size
-
 // "full"		sets canvas and stage to window size (canvas is actually set to screen size)
-
-
-
-var stage;
-
-var stageW;
-
-var stageH;
-
-
-
 var scaling = "full"; // full automatically sets width and height to window size
-
 var width = null;
-
 var height = null;
-
 var frame = new zim.Frame(scaling, width, height); 
-
+var stage;
+var stageW;
+var stageH;
 frame.on("ready", function() {	
-
 	zog("ready from ZIM Frame");
-
-	
-
 	stage = frame.stage;
-
 	stageW = frame.stageW;
-
 	stageH = frame.stageH;
-
-
-
-	// put your code here (you can delete this code)
-
 	
-
 	var hLayoutManager = new zim.LayoutManager();
-
 	var vLayoutManager = new zim.LayoutManager();
-
 	
-
 	var gridManager = new zim.GridManager();
+	var guideManager = new zim.GuideManager();
 
-	
-
-	var hP = app.makeHorizontalPages(hLayoutManager, gridManager);
-
-	var vP = app.makeVerticalPages(vLayoutManager, gridManager);
-
-	// zog(hP.main.name);
-
+	var hP = app.makeHorizontalPages(hLayoutManager,gridManager,guideManager);
+	var vP = app.makeVerticalPages(vLayoutManager, gridManager, guideManager);
 	// stage.addChild(hP.main);
-
 	// stage.addChild(hP.info);
-
 	// hP.info.x = 100;
-
-	
-
-	// left, right, up, down
-
-	var hPages = new zim.Pages(stage, [
-
-		{page:hP.main, swipe:[hP.info,hP.info,null,null]},
-
-		{page:hP.info, swipe:[hP.main,hP.main,null,null]},
-
-	], "slide", 600);
-
-	
-
-	// left, right, up, down
-
-	var vPages = new zim.Pages(stage, [
-
-		{page:vP.main, swipe:[null,null,vP.info,vP.info]},
-
-		{page:vP.info, swipe:[null,null,vP.main,vP.main]},
-
-	], "slide", 600);
-
-	
-
-	// prepare hotspots
-
-	
-
-	var hHS = app.makeHotSpots(hP, hPages, "horizontal");
-
-	var vHS = app.makeHotSpots(vP, vPages, "vertical");
-
-	
-
-	orientate();
-
-	
-
-
+	// zim.Pages = function(holder, pages, transition, speed, transitionTable)
+	//lefy,right,up,down
+	var hPages = new zim.Pages(stage,[
+			{page:hP.main, swipe:[hP.info, hP.info, null, null]},
+			{page:hP.info, swipe:[hP.main, hP.main, null, null]}
+		],"slide",500
+	);
+		// stage.addChild(hPages);
+	var vPages = new zim.Pages(stage,[
+			{page:vP.main,  swipe:[null, null, vP.info, vP.info]},
+			{page:vP.info,  swipe:[null, null, vP.main, vP.main]}
+		], "slide", 500
+	);
+	stage.addChild(vPages);
+	//app.makeHotspots(hP,hPages);
 
 	// put resizing code in here (scaling="full" only)
-
 	frame.on("resize", function(e) {
-
+		
 		stageW = frame.stageW;
-
 		stageH = frame.stageH;
-
 		
-
+		zim.scaleTo(hP.rect,stage,100,100,"both");
+		zim.scaleTo(vP.rect,stage,100,100,"both");
+		
+		zim.scaleTo(hP.infoBacking,stage,100,100,"both");
+		zim.scaleTo(vP.infoBacking,stage,100,100,"both");
+		
 		hLayoutManager.resize();
-
 		vLayoutManager.resize();
-
 		
-
-		hPages.resize();
-
-		vPages.resize();
-
+		gridManager.resize();
+		guideManager.resize();
 		
-
-		zim.scaleTo(hP.info, stage, 100, 100, "both");
-
-		zim.scaleTo(vP.info, stage, 100, 100, "both");
-
-		
-
 		stage.update();
-
 	}); // end of resizing
-
 	
-
 	// put orientation change code in here
-
 	frame.on("orientation", orientate);
-
-	
-
-	function orientate(e) {	
-
-		zog(frame.orientation);	
-
+	function orientate(e){
+		console.log(frame.orientation);
 		
-
-		if (frame.orientation == "horizontal") {
-
-			// show and enable the right pages
-
+		if(frame.orientation == "horizontal"){
+			
+			hPages.go(hP[vPages.page.name], null, "none");
 			stage.addChild(hPages);
-
-			hPages.enable(); 
-
-			// match the current page we are on (tricky looking)
-
-			hPages.go(hP[vPages.page.name],null,"none");
-
-			// enable the right layout manager
-
+			hPages.enable();
 			hLayoutManager.enable();
-
-			// remove pages not needed and disable managers
-
 			stage.removeChild(vPages);
-
-			vPages.disable(); 
-
+			vPages.disable();
 			vLayoutManager.disable();
-
-		} else {
-
+			
+		}else{
+			
+			vPages.go(vP[hPages.page.name], null, "none");
 			stage.addChild(vPages);
-
-			vPages.enable(); 
-
-			vPages.go(vP[hPages.page.name],null,"none");
-
+			vPages.enable();
 			vLayoutManager.enable();
-
 			stage.removeChild(hPages);
-
-			hPages.disable(); 
-
-			hLayoutManager.disable();			
-
+			hPages.disable();
+			hLayoutManager.disable();
+			
 		}
-
-		
-
 		stage.update();
-
-	} // end of orientation
-
+	}// end of orientation
 	
-
+	orientate();
+	//createjs.Ticker.addEventListener("tick", stage);
+	//createjs.Ticker.setFPS(1);
 	stage.update();	
-
 	
-
 }); // end of ready
-
 </script>
-
 </head>
-
-
-
 <body>
-
 <!-- canvas with id="myCanvas" is made by zim Frame -->
-
 </body>
-
 </html>
